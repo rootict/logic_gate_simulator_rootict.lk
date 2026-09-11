@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOT_ict Advanced Logic Practical Simulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; user-select: none; }
+        body { background-color: #0b0f19; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        header { background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%); padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3b82f6; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative; z-index: 50; }
+        .brand-container { display: flex; flex-direction: column; }
+        .brand h1 { font-size: 20px; color: #60a5fa; letter-spacing: 1px; font-weight: 700; }
+        .brand span { color: #f43f5e; }
+        .moderator-tag { font-size: 11px; color: #94a3b8; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .student-info-display { font-size: 14px; background: rgba(255,255,255,0.03); padding: 6px 12px; border-radius: 4px; border: 1px solid #334155; color: #cbd5e1; display: flex; align-items: center; gap: 10px; }
+        .timer-container { display: flex; align-items: center; gap: 10px; }
+        .timer-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; }
+        .timer-box { font-size: 22px; font-weight: bold; color: #60a5fa; background: #18181b; padding: 4px 12px; border-radius: 4px; border: 1px solid #3b82f6; font-family: 'Courier New', Courier, monospace; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); min-width: 90px; text-align: center; }
+        .timer-box.urgent { color: #f43f5e; border-color: #f43f5e; box-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+        #login-overlay, #break-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; display: flex; justify-content: center; align-items: center; z-index: 100; }
+        #login-overlay { background: rgba(11, 15, 25, 0.98); backdrop-filter: blur(6px); }
+        .login-card, .break-card { background: #1e293b; padding: 40px; border-radius: 8px; border-top: 4px solid #3b82f6; width: 480px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); text-align: center; }
+        .break-card { border-top-color: #eab308; width: 550px; }
+        .login-card h2, .break-card h2 { margin-bottom: 5px; color: #f8fafc; font-size: 24px; }
+        .login-card p.subtitle, .break-card p.subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 25px; }
+        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 15px; transition: border-color 0.2s; }
+        .login-card input:focus { outline: none; border-color: #3b82f6; }
+        .login-card button, .break-card button { background: #2563eb; color: white; border: none; padding: 12px 30px; font-size: 15px; font-weight: 600; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; transition: background 0.2s; }
+        .login-card button:hover { background: #1d4ed8; }
+        .break-timer-large { font-size: 60px; font-family: monospace; color: #eab308; margin: 30px 0; font-weight: bold; background: #0f172a; padding: 20px; border-radius: 6px; border: 1px solid #334155; letter-spacing: 2px; }
+        .sidebar { width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; }
+        .section-title { font-size: 12px; text-transform: uppercase; color: #64748b; letter-spacing: 1px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+        .gate-list { display: flex; flex-direction: column; gap: 10px; }
+        .gate-item { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: all 0.2s; }
+        .gate-item:hover { border-color: #60a5fa; background: #1e293b; transform: translateX(2px); }
+        .gate-icon-svg { width: 45px; height: 25px; fill: none; stroke: #f8fafc; stroke-width: 2; }
+        .workspace-container { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .scenario-panel { background: #1e293b; padding: 15px 25px; border-bottom: 1px solid #334155; z-index: 10; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .scenario-header { display: flex; justify-content: space-between; align-items: center; }
+        .scenario-title { color: #60a5fa; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .difficulty-badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+        .diff-basic { background: #064e3b; color: #34d399; }
+        .diff-inter { background: #78350f; color: #fbbf24; }
+        .diff-adv { background: #7f1d1d; color: #f87171; }
+        .scenario-text { color: #e2e8f0; font-size: 14px; line-height: 1.5; }
+        .sinhala-text { font-family: 'Iskoola Pota', 'Nirmala UI', sans-serif; color: #94a3b8; font-size: 13.5px; margin-top: 8px; border-top: 1px dashed #334155; padding-top: 8px; line-height: 1.5; }
+        
+        .btn-view-q { background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; align-self: flex-start; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3); }
+        .btn-view-q:hover { background: #2563eb; transform: translateY(-1px); }
+        
+        .canvas-area { flex: 1; position: relative; overflow: hidden; background-color: #0b0f19; background-image: linear-gradient(rgba(51, 65, 85, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(51, 65, 85, 0.2) 1px, transparent 1px); background-size: 20px 20px; }
+        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .canvas-node { position: absolute; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid #475569; border-radius: 6px; padding: 14px 10px 10px 10px; min-width: 95px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; cursor: move; box-shadow: 0 4px 15px rgba(0,0,0,0.4); touch-action: none; }
+        .canvas-node.selected { border-color: #60a5fa; box-shadow: 0 0 15px rgba(96, 165, 250, 0.4); }
+        .canvas-node .node-title { font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight: 600; text-transform: uppercase; }
+        .node-delete-btn { position: absolute; top: 2px; right: 4px; font-size: 12px; color: #64748b; cursor: pointer; line-height: 1; transition: color 0.15s; padding: 2px; }
+        .node-delete-btn:hover { color: #f43f5e; }
+        .fixed-nodes-left { position: absolute; left: 20px; top: 0; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 30px; z-index: 5; }
+        .fixed-nodes-right { position: absolute; right: 20px; top: 0; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 30px; z-index: 5; }
+        .io-node { background: #1e1b4b; border: 1px solid #4f46e5; border-radius: 6px; padding: 10px 15px; width: 155px; text-align: center; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 13px; font-weight: 600; }
+        .io-node.output-type { background: #4c1d95; border-color: #8b5cf6; }
+        .io-node-desc { font-size: 10px; color: #94a3b8; font-weight: normal; margin-top: 4px; }
+        .port { width: 20px; height: 20px; background: #0f172a; border: 2px solid #64748b; border-radius: 50%; position: absolute; cursor: crosshair; z-index: 20; transition: all 0.2s; }
+        .port:hover { border-color: #60a5fa; background: #1e293b; transform: scale(1.2); }
+        .port.selected-port { border-color: #f43f5e; background: #f43f5e; box-shadow: 0 0 10px rgba(244, 63, 94, 0.6); }
+        .port.input-port { left: -10px; top: calc(50% - 10px); }
+        .port.output-port { right: -10px; top: calc(50% - 10px); }
+        .port.input-port-1 { left: -10px; top: calc(30% - 10px); }
+        .port.input-port-2 { left: -10px; top: calc(70% - 10px); }
+        .bottom-bar { background: #1e293b; border-top: 1px solid #334155; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .btn { padding: 10px 20px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; transition: all 0.2s; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-secondary { background: #334155; color: white; }
+        .btn-secondary:hover { background: #475569; }
+        .btn-danger { background: #7f1d1d; color: white; margin-left: 10px; }
+        .btn-danger:hover { background: #991b1b; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); display: none; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(3px); }
+        .modal-card { background: #1e293b; border-top: 4px solid #f43f5e; padding: 30px; border-radius: 8px; width: 450px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
+        
+        #q-view-modal .modal-card { width: 800px; text-align: left; border-top-color: #60a5fa; max-height: 88vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .q-modal-header { background: #0f172a; padding: 20px 30px; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+        .q-modal-header h3 { color: #60a5fa; margin: 0; font-size: 18px; border: none; padding: 0; }
+        .q-modal-content { overflow-y: auto; flex: 1; padding: 25px 30px; color: #cbd5e1; line-height: 1.6; }
+        
+        .lang-block { background: rgba(15, 23, 42, 0.4); border: 1px solid #334155; border-radius: 6px; padding: 18px; margin-bottom: 20px; }
+        .lang-block-title { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .lang-block-title::after { content: ''; flex: 1; height: 1px; background: #334155; }
+        .lang-block p { margin-bottom: 12px; font-size: 14.5px; }
+        .lang-block.sinhala-block p, .lang-block.sinhala-block li { font-family: 'Iskoola Pota', 'Nirmala UI', sans-serif; font-size: 15px; color: #94a3b8; }
+        
+        .q-modal-content table { width: 100%; border-collapse: collapse; margin: 15px 0; background: #0f172a; font-size: 14px; border-radius: 4px; overflow: hidden; }
+        .q-modal-content th, .q-modal-content td { border: 1px solid #334155; padding: 12px; text-align: left; }
+        .q-modal-content th { background: #1e1b4b; color: #8b5cf6; font-weight: 600; text-transform: uppercase; font-size: 12px; }
+        .q-modal-content td.center { text-align: center; }
+        .q-modal-content ul { margin-bottom: 15px; padding-left: 20px; font-size: 14.5px; }
+        .q-modal-content li { margin-bottom: 6px; }
+        
+        .modal-select { width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 4px; margin-bottom: 25px; font-size: 14px; }
+        .modal-select:focus { outline: none; border-color: #60a5fa; }
+        .modal-buttons { display: flex; justify-content: space-between; gap: 15px; margin-top: 15px; }
+        .modal-buttons .btn { flex: 1; }
+        .q-modal-footer { padding: 15px 30px; background: #0f172a; border-top: 1px solid #334155; display: flex; justify-content: flex-end; }
+        
+        #final-screen { display: none; flex-direction: column; justify-content: center; align-items: center; flex: 1; background: #0f172a; text-align: center; gap: 20px; }
+        .success-icon { font-size: 70px; color: #34d399; background: rgba(52, 211, 153, 0.1); width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .download-box { background: #1e293b; padding: 35px; border-radius: 8px; border: 1px solid #334155; max-width: 550px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* --- Responsive Design Updates --- */
+
+        .login-card, .break-card { width: 90%; max-width: 480px; padding: 25px; }
+        .break-card { max-width: 550px; }
+        #q-view-modal .modal-card { width: 95%; max-width: 800px; }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 12px; text-align: center; padding: 15px; }
+            .student-info-display { width: 100%; justify-content: center; }
+            .main-container { flex-direction: column; overflow: auto; }
+            
+            .sidebar { 
+                width: 100%; height: auto; max-height: 180px;
+                flex-direction: column; border-right: none; 
+                border-bottom: 1px solid #334155; padding: 10px;
+            }
+            .gate-list { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
+            .gate-item { min-width: 120px; flex-direction: column; gap: 5px; padding: 8px; }
+            
+            .workspace-container { flex: 1; min-height: 60vh; }
+            .scenario-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            
+            .fixed-nodes-left, .fixed-nodes-right { gap: 10px; }
+            .io-node { width: 100px; padding: 6px; font-size: 11px; }
+            .io-node-desc { font-size: 9px; }
+            
+            .bottom-bar { flex-direction: column; gap: 15px; }
+            .bottom-bar div { display: flex; flex-direction: column; width: 100%; gap: 10px; }
+            .btn-danger { margin-left: 0; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-container">
+            <div class="brand"><h1>ROOT_<span>ict</span> Logic Gate Simulator</h1></div>
+            <div class="moderator-tag">Designed & Moderated by Himanka Dodangoda</div>
+        </div>
+        <div class="student-info-display" id="nav-student-name">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Student Not Set</span>
+        </div>
+        <div class="timer-container">
+            <div class="timer-label" id="timer-status-text">Question Time</div>
+            <div class="timer-box" id="countdown-timer">00:00</div>
+        </div>
+    </header>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>Practical Assessment</h2>
+            <p class="subtitle">Complete 12 Segment-Timed Logic Scenarios</p>
+            <input type="text" id="student-name-input" placeholder="Your Full Name (e.g., Kasun Perera)" required>
+            <input type="text" id="student-index-input" placeholder="Index Number / Batch" required>
+            <button onclick="startPractical()">Initialize Assessment System</button>
+        </div>
+    </div>
+
+    <!-- Intermission Break Screen -->
+    <div id="break-overlay" style="display: none;">
+        <div class="break-card">
+            <h2>Assessment Intermission Break</h2>
+            <p class="subtitle" style="color: #fbbf24;" id="break-msg">Take a rest. Next segment will open automatically after the break.</p>
+            <div class="break-timer-large" id="break-countdown">10:00</div>
+            <p style="font-size: 13px; color: #94a3b8; line-height: 1.4;">
+                Please do not close this window. The assessment will automatically resume once the timer reaches zero.
+            </p>
+        </div>
+    </div>
+
+    <div class="main-container" id="app-workspace" style="display: none;">
+        <div class="sidebar">
+            <div class="section-title">Components Palette</div>
+            <div class="gate-list">
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'AND')" onclick="addGateCenter('AND')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 25 5 A 10 10 0 0 1 25 25 L 10 25 Z" /></svg>
+                    <span style="font-size:14px; font-weight:600;">AND Gate</span>
+                </div>
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'OR')" onclick="addGateCenter('OR')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /></svg>
+                    <span style="font-size:14px; font-weight:600;">OR Gate</span>
+                </div>
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'NOT')" onclick="addGateCenter('NOT')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 30 15 L 10 25 Z" /><circle cx="34" cy="15" r="3" /></svg>
+                    <span style="font-size:14px; font-weight:600;">NOT Gate</span>
+                </div>
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'NAND')" onclick="addGateCenter('NAND')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 25 5 A 10 10 0 0 1 25 25 L 10 25 Z" /><circle cx="38" cy="15" r="3" /></svg>
+                    <span style="font-size:14px; font-weight:600;">NAND Gate</span>
+                </div>
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'NOR')" onclick="addGateCenter('NOR')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /><circle cx="39" cy="15" r="3" /></svg>
+                    <span style="font-size:14px; font-weight:600;">NOR Gate</span>
+                </div>
+                <div class="gate-item" draggable="true" ondragstart="handleDragStart(event, 'XOR')" onclick="addGateCenter('XOR')">
+                    <svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 5 5 Q 13 15 5 25 M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /></svg>
+                    <span style="font-size:14px; font-weight:600;">XOR Gate</span>
+                </div>
+            </div>
+            <div style="margin-top:auto; background:rgba(59, 130, 246, 0.1); padding: 10px; border-radius:4px; border:1px solid rgba(59, 130, 246, 0.3);">
+                <p style="font-size: 11px; color:#94a3b8; line-height:1.4;">
+                    <strong style="color:#60a5fa">Tips:</strong> Drag gates or TAP them on mobile. Click output pin, then input pin to wire. Click <strong style="color:#f43f5e">×</strong> to delete.
+                </p>
+            </div>
+        </div>
+
+        <div class="workspace-container">
+            <div class="scenario-panel">
+                <div class="scenario-header">
+                    <div class="scenario-title" id="current-question-num">Question 1 / 12</div>
+                    <div class="difficulty-badge diff-basic" id="difficulty-indicator">Basic Level</div>
+                </div>
+                <div id="current-scenario-desc">Loading scenario...</div>
+            </div>
+            <div class="canvas-area" id="canvas-board" ondragover="event.preventDefault()" ondrop="handleCanvasDrop(event)">
+                <svg id="svg-layer"></svg>
+                <div class="fixed-nodes-left" id="input-nodes-container"></div>
+                <div class="fixed-nodes-right" id="output-nodes-container"></div>
+            </div>
+            <div class="bottom-bar">
+                <div>
+                    <button class="btn btn-secondary" onclick="clearAllConnections()">Clear Wires</button>
+                    <button class="btn btn-danger" onclick="clearFullCanvas()">Reset Canvas</button>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="processSubmission()">Submit Circuit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Long Question View Modal -->
+    <div class="modal-overlay" id="q-view-modal">
+        <div class="modal-card">
+            <div class="q-modal-header">
+                <h3 id="q-modal-title">Question Scenario</h3>
+            </div>
+            <div class="q-modal-content" id="q-modal-content">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="q-modal-footer">
+                <button class="btn btn-secondary" onclick="closeQModal()">Close & Return to Workspace</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card" style="padding:30px;">
+            <h3 style="color: #f8fafc; margin-bottom: 15px; font-size: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Circuit Verification Failed
+            </h3>
+            <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">Your drawn logic circuit fails to satisfy the scenario's complete truth table requirements. It may be incomplete or incorrectly wired.</p>
+            <select class="modal-select" id="modal-confirm-dropdown">
+                <option value="no">No, I want to stay and correct my logic</option>
+                <option value="yes">Yes, skip this and proceed to the next question</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" style="background:#e11d48;" onclick="executeModalDecision()">Confirm Decision</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="final-screen">
+        <div class="success-icon"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <h2 style="color:#f8fafc; font-size:28px;">Assessment Completed</h2>
+        <div class="download-box">
+            <p style="margin-bottom: 20px; color:#94a3b8; font-size:15px; line-height:1.5;">Your session data has been securely compiled. Please download your finalized answer sheet and submit it to Himanka Dodangoda for evaluation.</p>
+            <button class="btn btn-primary" style="background:#10b981; padding: 15px 30px; font-size:15px; width:100%; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);" onclick="downloadAnswersReport()">Download Final Answer Sheet</button>
+        </div>
+    </div>
+
+    <script>
+        function text(eng, sin) { return `<div class="scenario-text">${eng}</div><div class="sinhala-text">${sin}</div>`; }
+
+        const q9Html = `
+            <div class="lang-block">
+                <div class="lang-block-title">English Instructions</div>
+                <p>A security system used to protect a house at night is controlled by three sensors <strong>A</strong>, <strong>B</strong>, and <strong>C</strong>. Sensor A detects the movement of an object, Sensor B senses the light intensity, and Sensor C senses the distance to an object from the front entrance of the house.</p>
+                <table>
+                    <tr><th>Sensor</th><th>Condition / Opportunity</th><th class="center">Logical Value</th></tr>
+                    <tr><td rowspan="2"><strong>A (Movement)</strong></td><td>Indicates a movement</td><td class="center">1</td></tr><tr><td>No movement</td><td class="center">0</td></tr>
+                    <tr><td rowspan="2"><strong>B (Light)</strong></td><td>Illuminated (Bright)</td><td class="center">1</td></tr><tr><td>Darkness</td><td class="center">0</td></tr>
+                    <tr><td rowspan="2"><strong>C (Distance)</strong></td><td>Object is within 5m</td><td class="center">1</td></tr><tr><td>No object within 5m</td><td class="center">0</td></tr>
+                </table>
+                <p>When an object moves within 5m during a moment of darkness, a high-brightness light bulb <strong>(L)</strong> attached to the entrance turns on (logical value 1).</p>
+            </div>
+
+            <div class="lang-block sinhala-block">
+                <div class="lang-block-title">සිංහල උපදෙස් (Sinhala Translation)</div>
+                <p>රාත්‍රී කාලයේදී නිවසක් ආරක්ෂා කිරීම සඳහා භාවිතා කරන ආරක්ෂිත පද්ධතියක් A, B සහ C යන සංවේදක (sensors) තුනක් මගින් පාලනය වේ. A සංවේදකය මගින් වස්තුවක චලනයද, B සංවේදකය මගින් ආලෝකයේ තීව්‍රතාවයද (එළිය/අඳුර), C සංවේදකය මගින් නිවසේ ඉදිරිපස දොරටුවේ සිට වස්තුවකට ඇති දුරද සංවේදනය කරයි.</p>
+                <p>අඳුරු අවස්ථාවකදී මීටර් 5ක් ඇතුළත වස්තුවක් චලනය වන විට නිවසේ ඉදිරිපස ඇති විදුලි බුබුල <strong>(L)</strong> දැල්විය යුතුය (එනම් ප්‍රතිදානය 1 වේ).</p>
+            </div>
+        `;
+
+        const q10Html = `
+            <div class="lang-block">
+                <div class="lang-block-title">English Instructions</div>
+                <p>A bank vault is secured by a logic circuit with four binary inputs. Three of these inputs come from the keys named <strong>k<sub>0</sub></strong>, <strong>k<sub>1</sub></strong>, and <strong>k<sub>2</sub></strong>, and the fourth input comes from a <strong>Timer</strong>.</p>
+                <p>The four inputs together form a <strong>4-bit binary number</strong>. The timer input acts as the Most Significant Bit (MSB), followed by k<sub>2</sub> and k<sub>1</sub>, with k<sub>0</sub> acting as the Least Significant Bit (LSB).</p>
+                <ul>
+                    <li><strong>Inputs (MSB to LSB):</strong> Timer, k<sub>2</sub>, k<sub>1</sub>, k<sub>0</sub></li>
+                    <li><strong>Unlock Condition:</strong> The vault unlocks <em>only</em> when the 4-bit binary input represents a number that is a <strong>multiple of 3</strong> (i.e., 3, 6, 9, 12, 15) or a <strong>multiple of 7</strong> (i.e., 7, 14).</li>
+                </ul>
+            </div>
+
+            <div class="lang-block sinhala-block">
+                <div class="lang-block-title">සිංහල උපදෙස් (Sinhala Translation)</div>
+                <p>බැංකු සේප්පුවක් ද්විමය (binary) ආදාන හතරක් සහිත තාර්කික පරිපථයක් මගින් ආරක්ෂා කර ඇත. මෙම ආදාන වලින් තුනක් <strong>k<sub>0</sub></strong>, <strong>k<sub>1</sub></strong> සහ <strong>k<sub>2</sub></strong> යන යතුරු මගින් ලබා දෙන අතර, හතරවන ආදානය කාල ගණකයක් (Timer) මගින් ලබා දේ.</p>
+                <p>මෙම ආදාන හතර එක්ව 4-bit ද්විමය සංඛ්‍යාවක් සාදන අතර, එහි MSB (Most Significant Bit) ලෙස Timer අගයද, LSB (Least Significant Bit) ලෙස k<sub>0</sub> අගයද ක්‍රියා කරයි.</p>
+                <p>සේප්පුව විවෘත වන්නේ මෙම 4-bit ද්විමය ආදානය මගින් නිරූපණය වන අගය <strong>3 හි ගුණාකාරයක්</strong> (එනම් 3, 6, 9, 12, 15) හෝ <strong>7 හි ගුණාකාරයක්</strong> (එනම් 7, 14) වන විට පමණි.</p>
+            </div>
+        `;
+
+        const q11Html = `
+            <div class="lang-block">
+                <div class="lang-block-title">English Instructions</div>
+                <p>A well-equipped popular gymnasium is handled by the state Sports Ministry. It has an automatic door that controls the entering of players using a sensor-based system. The automatic door opening and closing denotes <strong>ON (1)</strong> and <strong>OFF (0)</strong> states <strong>(D)</strong>.</p>
+                <p>When a player arrives, the system determines the following factors to allow the player to enter:</p>
+                <ul>
+                    <li><strong>Equipment (G):</strong> Availability of gym equipment (1 = Available, 0 = Not Available).</li>
+                    <li><strong>Time (P):</strong> Identifies entrance time as peak time (1 = Peak time) or off-peak time (0 = Off-peak time).</li>
+                    <li><strong>Registration (F):</strong> Uses a fingerprint sensor to detect registered members (1 = Registered, 0 = Not Registered).</li>
+                </ul>
+                <p><strong>Conditions for Entry:</strong> Registered players are allowed to enter during peak hours <em>if</em> there is vacant equipment. Non-registered players are <em>only</em> allowed to enter during off-peak hours (also requiring vacant equipment).</p>
+            </div>
+
+            <div class="lang-block sinhala-block">
+                <div class="lang-block-title">සිංහල උපදෙස් (Sinhala Translation)</div>
+                <p>ක්‍රීඩා අමාත්‍යාංශය මගින් පාලනය වන ජනප්‍රිය ව්‍යායාම මධ්‍යස්ථානයක (Gymnasium) ක්‍රීඩකයින් ඇතුළුවීම ස්වයංක්‍රීය දොරටු පද්ධතියක් <strong>(D)</strong> මගින් පාලනය වේ. පද්ධතිය මගින් පහත සාධක සලකා බලයි:</p>
+                <ul>
+                    <li>ව්‍යායාම උපකරණවල ලබාගත හැකි බව <strong>(G)</strong> (1 = පවතී, 0 = නොමැත).</li>
+                    <li>පැමිණි වේලාව කාර්යබහුල වේලාවක්ද යන්න <strong>(P)</strong> (1 = Peak time, 0 = Off-peak time).</li>
+                    <li>ඇඟිලි සලකුණු මගින් ලියාපදිංචි සාමාජිකයෙක්ද යන්න <strong>(F)</strong> (1 = ලියාපදිංචි, 0 = නැත).</li>
+                </ul>
+                <p><strong>ඇතුළුවීමේ කොන්දේසි:</strong> ලියාපදිංචි සාමාජිකයින්ට කාර්යබහුල වේලාවන්හිදී (Peak hours) වුවද උපකරණ පුරප්පාඩු වී ඇත්නම් ඇතුළු විය හැක. ලියාපදිංචි නොමැති පුද්ගලයින්ට ඇතුළු විය හැක්කේ කාර්යබහුල නොවන වේලාවන්හිදී (Off-peak hours) උපකරණ පවතී නම් පමණි.</p>
+            </div>
+        `;
+
+        const q12Html = `
+            <div class="lang-block">
+                <div class="lang-block-title">English Instructions</div>
+                <p>In a tank with pet fish, the health of a goldfish depends on the pH value of the water, temperature, and oxygen level. To maintain a suitable environment, a <strong>sensor-based control system</strong> must be designed using three sensors:</p>
+                <table>
+                    <tr><th>Sensor</th><th>Condition</th><th class="center">Binary Value</th></tr>
+                    <tr><td rowspan="2"><strong>A (pH Sensor)</strong></td><td>When pH value is between 6 and 8 (Appropriate)</td><td class="center">0</td></tr><tr><td>When pH value is not between 6 and 8</td><td class="center">1</td></tr>
+                    <tr><td rowspan="2"><strong>B (Temp Sensor)</strong></td><td>When temperature is between 55°F and 80°F (Appropriate)</td><td class="center">0</td></tr><tr><td>When temperature is not between 55°F and 80°F</td><td class="center">1</td></tr>
+                    <tr><td rowspan="2"><strong>C (Oxygen Sensor)</strong></td><td>When oxygen level is less than the given value</td><td class="center">0</td></tr><tr><td>When oxygen level is equal to or greater than the given value (Appropriate)</td><td class="center">1</td></tr>
+                </table>
+                <p><strong>System Actions (Outputs):</strong></p>
+                <ul>
+                    <li>A <strong>Fountain</strong> will automatically start (Value = 1) when the water temperature is <em>not</em> within the given range, OR when the oxygen level is <em>below</em> the given value. It stops (Value = 0) to save electricity when both are normal.</li>
+                    <li>A <strong>Light Bulb</strong> inside the tank will light up (Value = 1) IF the water's pH value is <em>outside</em> the given range.</li>
+                </ul>
+            </div>
+
+            <div class="lang-block sinhala-block">
+                <div class="lang-block-title">සිංහල උපදෙස් (Sinhala Translation)</div>
+                <p>සුරතල් මසුන් ඇති කරන ටැංකියක ජලයේ pH අගය <strong>(A)</strong>, උෂ්ණත්වය <strong>(B)</strong> සහ ඔක්සිජන් මට්ටම <strong>(C)</strong> මැනීම සඳහා සංවේදක තුනක් භාවිතා කරයි. මෙහිදී මසුන්ට හිතකර සාමාන්‍ය පරාසයන් නිරූපණය සඳහා "0" ත්, අහිතකර අවස්ථා සඳහා "1" ත් (ඔක්සිජන් සඳහා ප්‍රතිලෝමව) භාවිතා වේ.</p>
+                <p>පහත කොන්දේසි යටතේ පද්ධතියේ ප්‍රතිදානයන් (Outputs) දෙකක් ක්‍රියාත්මක වේ:</p>
+                <ul>
+                    <li>ජලයේ උෂ්ණත්වය නියමිත පරාසය තුළ නොමැති විට හෝ ඔක්සිජන් මට්ටම නියමිත අගයට වඩා අඩු වූ විට <strong>ෆවුන්ටන් (Fountain)</strong> එක ස්වයංක්‍රීයව ක්‍රියාත්මක විය යුතුය (1).</li>
+                    <li>ජලයේ pH අගය නියමිත පරාසයෙන් පිටත පවතී නම්, ටැංකිය ඇතුළත ඇති <strong>විදුලි බුබුල (Bulb)</strong> දැල්විය යුතුය (1).</li>
+                </ul>
+            </div>
+        `;
+
+        const questionsData = [
+            { id: 1, timeLimit: 7 * 60, diff: "Basic Level", diffClass: "diff-basic", 
+              title: "Automated Smart Street Light", 
+              desc: text("A street bulb should turn ON during nighttime OR rainy conditions.", "වීදි ලාම්පුවක් රාත්‍රී කාලයේදී හෝ වැසි සහිත අවස්ථාවකදී දැල්විය යුතුය."), 
+              inputs: ["Light Sensor (1)", "Wet Sensor (1)"], outputs: ["Bulb"], expectedLogic: (i) => [i[0] || i[1]], isLong: false },
+              
+            { id: 2, timeLimit: 7 * 60, diff: "Basic Level", diffClass: "diff-basic", 
+              title: "Secure ATM Access", 
+              desc: text("ATM Cash drawer opens ONLY IF the ATM Card is inserted AND the PIN is correct.", "ATM යන්ත්‍රයේ මුදල් ලාච්චුව විවෘත වන්නේ කාඩ්පත ඇතුළු කර ඇති විට සහ PIN අංකය නිවැරදි වූ විට පමණි."), 
+              inputs: ["Card Sensor (1)", "PIN Verifier (1)"], outputs: ["Cash Drawer"], expectedLogic: (i) => [i[0] && i[1]], isLong: false },
+              
+            { id: 3, timeLimit: 7 * 60, diff: "Basic (Reverse Logic)", diffClass: "diff-basic", 
+              title: "Building Fire Alarm", 
+              desc: text("The Fire Alarm triggers if Smoke is detected AND the Manual Override is NOT active.", "දුමාරය හඳුනාගත් විට සහ අතින් ක්‍රියා විරහිත කිරීමේ පද්ධතිය ක්‍රියාත්මක නොවන විට ගිනි අනතුරු ඇඟවීමේ සීනුව නාද විය යුතුය."), 
+              inputs: ["Smoke Sensor (1)", "Override (1=Active)"], outputs: ["Fire Alarm"], expectedLogic: (i) => [i[0] && (!i[1])], isLong: false },
+            
+            { id: 4, timeLimit: 10 * 60, diff: "Intermediate (Reverse Logic)", diffClass: "diff-inter", 
+              title: "Industrial Cooling Fan", 
+              desc: text("The cooling fan turns ON ONLY WHEN the Temperature High Sensor registers true AND the Manual Emergency Shutdown Switch is Inactive.", "උෂ්ණත්වය ඉහළ ගිය විට සහ හදිසි නැවතුම් ස්විචය අක්‍රිය තත්ත්වයේ ඇති විට පමණක් සිසිලන පංකාව ක්‍රියාත්මක වේ."), 
+              inputs: ["Temp High (1)", "Shutdown (1=ON)"], outputs: ["Cooling Fan"], expectedLogic: (i) => [i[0] && (!i[1])], isLong: false },
+              
+            { id: 5, timeLimit: 10 * 60, diff: "Intermediate (Reverse Logic)", diffClass: "diff-inter", 
+              title: "Water Tank Controller", 
+              desc: text("The Motor runs if the Water Level is LOW AND the Water Level is NOT HIGH.", "ජල මට්ටම පහළ ගිය විට සහ ජල මට්ටම ඉහළ මට්ටමේ නොමැති විට ජල මෝටරය ක්‍රියාත්මක විය යුතුය."), 
+              inputs: ["Low Level (1)", "High Level (1)"], outputs: ["Water Motor"], expectedLogic: (i) => [i[0] && (!i[1])], isLong: false },
+            
+            { id: 6, timeLimit: 12 * 60, diff: "Intermediate Level", diffClass: "diff-inter", 
+              title: "Bank Vault Security", 
+              desc: text("Vault unlocks if the Manager and Supervisor keys are active, OR if the Motion Sensor is NOT active AND Manager key is active.", "කළමනාකරුගේ සහ සුපරීක්ෂකගේ යතුරු භාවිතා කළ විට හෝ චලන සංවේදකය අක්‍රීය විට කළමනාකරුගේ යතුර භාවිතා කළ විට සේප්පුව විවෘත වේ."), 
+              inputs: ["Manager (1)", "Supervisor (1)", "Motion (1)"], outputs: ["Vault Unlock"], expectedLogic: (i) => [(i[0] && i[1]) || (!i[2] && i[0])], isLong: false },
+              
+            { id: 7, timeLimit: 12 * 60, diff: "Intermediate (Reverse Logic)", diffClass: "diff-inter", 
+              title: "Car Safety Warning", 
+              desc: text("The Warning Light turns ON if the Engine is ON, AND (the Door is NOT Closed OR the Seatbelt is NOT Fastened).", "එන්ජිම ක්‍රියාත්මකව ඇති විට, සහ (දොර වැසී නොමැති විට හෝ සීට්බෙල්ට් එක පැළඳ නොමැති විට) අනතුරු ඇඟවීමේ බල්බය දැල්වේ."), 
+              inputs: ["Engine (1=ON)", "Door Closed (1=Yes)", "Seatbelt (1=Fastened)"], outputs: ["Warning Light"], expectedLogic: (i) => [i[0] && (!i[1] || !i[2])], isLong: false },
+              
+            { id: 8, timeLimit: 12 * 60, diff: "Intermediate (Reverse Logic)", diffClass: "diff-inter", 
+              title: "Factory Conveyor Belt", 
+              desc: text("The Conveyor operates if the Start Button is pressed, AND the Stop Button is NOT pressed, AND the Emergency Override is NOT active.", "ආරම්භක බොත්තම එබූ විට, නැවතුම් බොත්තම ඔබා නොමැති විට සහ හදිසි අක්‍රිය සංවේදකය ක්‍රියාත්මක නොවන විට වාහක පටිය ක්‍රියා කරයි."), 
+              inputs: ["Start Btn (1=Press)", "Stop Btn (1=Press)", "Override (1=Active)"], outputs: ["Conveyor"], expectedLogic: (i) => [i[0] && !i[1] && !i[2]], isLong: false },
+            
+            { id: 9, timeLimit: 20 * 60, diff: "Advanced (Exam Paper)", diffClass: "diff-adv", 
+              title: "Home Security System", fullHtml: q9Html,
+              inputs: ["Sensor A (Move)", "Sensor B (Light)", "Sensor C (Distance)"], outputs: ["Light Bulb (L)"], expectedLogic: (i) => [i[0] && (!i[1]) && i[2]], isLong: true },
+              
+            { id: 10, timeLimit: 20 * 60, diff: "Advanced Level", diffClass: "diff-adv", 
+              title: "4-bit Bank Vault Check", fullHtml: q10Html,
+              inputs: ["Timer (MSB)", "Key k2", "Key k1", "Key k0 (LSB)"], outputs: ["Vault Unlock"], 
+              expectedLogic: (i) => { let val = (i[0]<<3)|(i[1]<<2)|(i[2]<<1)|i[3]; return [[3,6,7,9,12,14,15].includes(val)]; }, isLong: true },
+              
+            { id: 11, timeLimit: 20 * 60, diff: "Advanced Level", diffClass: "diff-adv", 
+              title: "Gymnasium Door Control", fullHtml: q11Html,
+              inputs: ["Equipment (G)", "Peak Time (P)", "Registered (F)"], outputs: ["Door (D)"], expectedLogic: (i) => [i[0] && (i[2] || !i[1])], isLong: true },
+              
+            { id: 12, timeLimit: 20 * 60, diff: "Advanced (Dual Output)", diffClass: "diff-adv", 
+              title: "Goldfish Tank Control System", fullHtml: q12Html,
+              inputs: ["pH Sensor (A)", "Temp Sensor (B)", "Oxygen Sensor (C)"], outputs: ["Fountain", "Bulb"], expectedLogic: (i) => [i[1] || (!i[2]), i[0]], isLong: true }
+        ];
+
+        let currentQuestionIdx = 0;
+        let studentName = "";
+        let studentIndex = "";
+        let countdownTimeLeft = 0; 
+        let globalTimerInterval = null;
+        let isBreakPeriodActive = false;
+        let breakTimeLeft = 0;
+        let breakNextQuestionIdx = 0;
+        
+        let nodes = [];
+        let connections = [];
+        let nodeCounter = 0;
+        let selectedPort = null;
+
+        function startPractical() {
+            const nameVal = document.getElementById("student-name-input").value.trim();
+            const indexVal = document.getElementById("student-index-input").value.trim();
+            if(!nameVal || !indexVal) { alert("Please enter valid student credentials to begin."); return; }
+            studentName = nameVal; studentIndex = indexVal;
+            document.getElementById("nav-student-name").innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span style="color:#f8fafc; font-weight:600;">${studentName} <span style="color:#64748b; font-weight:normal;">(${studentIndex})</span></span>`;
+            document.getElementById("login-overlay").style.display = "none";
+            document.getElementById("app-workspace").style.display = "flex";
+            loadQuestion(0);
+            startCoreTimerLoop();
+        }
+
+        function startCoreTimerLoop() { 
+            globalTimerInterval = setInterval(() => { isBreakPeriodActive ? handleBreakTick() : handleQuestionTick(); }, 1000); 
+        }
+
+        function handleQuestionTick() { 
+            if (countdownTimeLeft <= 0) {
+                handleQuestionTimeout(); 
+            } else { 
+                countdownTimeLeft--; updateTimerDisplay(); 
+            } 
+        }
+
+        function handleQuestionTimeout() { 
+            alert(`Time is up for Question ${currentQuestionIdx + 1}! Saving state and moving forward automatically.`); 
+            saveCurrentStateLog("TIMEOUT_AUTO_ADVANCE"); 
+            handlePostQuestionLogic();
+        }
+        
+        function handlePostQuestionLogic() {
+            if (currentQuestionIdx === 4) { 
+                initiateIntermissionBreak(10 * 60, 5, "You have completed the first 5 questions. Take a 10-Minute Break.");
+            } else if (currentQuestionIdx === 7) { 
+                initiateIntermissionBreak(30 * 60, 8, "You have completed 8 questions. Take a 30-Minute Extended Break before the Advanced Section.");
+            } else {
+                advanceToNext();
+            }
+        }
+
+        function initiateIntermissionBreak(timeInSecs, nextIdx, msg) { 
+            isBreakPeriodActive = true; 
+            breakTimeLeft = timeInSecs; 
+            breakNextQuestionIdx = nextIdx;
+            
+            document.getElementById("timer-status-text").innerText = "Break Time"; 
+            document.getElementById("timer-status-text").style.color = "#eab308"; 
+            document.getElementById("break-msg").innerText = msg; 
+            
+            document.getElementById("app-workspace").style.display = "none";
+            document.getElementById("break-overlay").style.display = "flex"; 
+        }
+
+        function handleBreakTick() {
+            if (breakTimeLeft <= 0) {
+                isBreakPeriodActive = false; 
+                document.getElementById("break-overlay").style.display = "none"; 
+                document.getElementById("app-workspace").style.display = "flex"; 
+                document.getElementById("timer-status-text").innerText = "Question Time"; 
+                document.getElementById("timer-status-text").style.color = "#94a3b8"; 
+                
+                currentQuestionIdx = breakNextQuestionIdx; 
+                loadQuestion(currentQuestionIdx);
+            } else {
+                breakTimeLeft--; 
+                let m = Math.floor(breakTimeLeft / 60); 
+                let s = breakTimeLeft % 60; 
+                let timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; 
+                document.getElementById("break-countdown").innerText = timeStr; 
+                document.getElementById("countdown-timer").innerText = timeStr;
+            }
+        }
+        
+        function advanceToNext() {
+            currentQuestionIdx++;
+            if (currentQuestionIdx >= questionsData.length) showFinalCompletionScreen();
+            else loadQuestion(currentQuestionIdx);
+        }
+
+        function updateTimerDisplay() { 
+            let mins = Math.floor(countdownTimeLeft / 60); 
+            let secs = countdownTimeLeft % 60; 
+            const timerBox = document.getElementById("countdown-timer"); 
+            timerBox.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`; 
+            timerBox.className = countdownTimeLeft < 60 ? "timer-box urgent" : "timer-box"; 
+        }
+
+        function loadQuestion(idx) {
+            currentQuestionIdx = idx; if(idx >= questionsData.length) { showFinalCompletionScreen(); return; }
+            const q = questionsData[idx]; countdownTimeLeft = q.timeLimit; updateTimerDisplay();
+            document.getElementById("current-question-num").innerText = `Question ${idx + 1} / ${questionsData.length}`;
+            
+            if(q.isLong) {
+                document.getElementById("current-scenario-desc").innerHTML = `<button class="btn-view-q" onclick="openQModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    View Full Exam Scenario Details
+                </button>`;
+            } else {
+                document.getElementById("current-scenario-desc").innerHTML = q.desc;
+            }
+            
+            const badge = document.getElementById("difficulty-indicator"); badge.innerText = q.diff; badge.className = `difficulty-badge ${q.diffClass}`;
+            clearFullCanvas(); initializeFixedNodes(q);
+        }
+
+        function openQModal() {
+            const q = questionsData[currentQuestionIdx];
+            document.getElementById("q-modal-title").innerText = `${q.title} - Full Instructions`;
+            document.getElementById("q-modal-content").innerHTML = q.fullHtml;
+            document.getElementById("q-view-modal").style.display = "flex";
+        }
+        function closeQModal() { document.getElementById("q-view-modal").style.display = "none"; }
+
+        function initializeFixedNodes(question) {
+            const leftContainer = document.getElementById("input-nodes-container"); const rightContainer = document.getElementById("output-nodes-container");
+            leftContainer.innerHTML = ""; rightContainer.innerHTML = "";
+            leftContainer.style.gap = question.inputs.length > 3 ? "15px" : "30px";
+
+            question.inputs.forEach((inputName, index) => {
+                const id = `input_${index}`;
+                leftContainer.insertAdjacentHTML('beforeend', `<div class="io-node input-type" id="${id}"><div>${inputName}</div><div class="io-node-desc">Input ${String.fromCharCode(65 + index)}</div><div class="port output-port" data-node="${id}" data-port-type="out" data-port-idx="0"></div></div>`);
+                nodes.push({ id: id, type: 'INPUT', label: inputName, x: 20, y: 0, fixed: true });
+            });
+
+            question.outputs.forEach((outputName, index) => {
+                const outId = `output_${index}`;
+                rightContainer.insertAdjacentHTML('beforeend', `<div class="io-node output-type" id="${outId}"><div>${outputName}</div><div class="io-node-desc">Output Target</div><div class="port input-port" data-node="${outId}" data-port-type="in" data-port-idx="0"></div></div>`);
+                nodes.push({ id: outId, type: 'OUTPUT', label: outputName, x: 0, y: 0, fixed: true });
+            });
+            setupPortListeners();
+        }
+
+        // Tap-to-add for mobile (adds to center of canvas)
+        function addGateCenter(gateType) {
+            const rect = document.getElementById("canvas-board").getBoundingClientRect();
+            const offset = (Math.random() * 40) - 20; // prevent perfect overlap
+            const x = (rect.width / 2) - 45 + offset;
+            const y = (rect.height / 2) - 25 + offset;
+            createGateNode(gateType, x, y);
+        }
+
+        function handleDragStart(e, gateType) { e.dataTransfer.setData("text/plain", gateType); }
+        function handleCanvasDrop(e) { e.preventDefault(); const gateType = e.dataTransfer.getData("text/plain"); if(!gateType) return; const rect = document.getElementById("canvas-board").getBoundingClientRect(); createGateNode(gateType, e.clientX - rect.left - 45, e.clientY - rect.top - 25); }
+
+        function createGateNode(type, x, y) {
+            nodeCounter++; const nodeId = `gate_${nodeCounter}`; let gateSvg = '', portHtml = '';
+            if (type === 'NOT') {
+                gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 30 15 L 10 25 Z" /><circle cx="34" cy="15" r="3" /></svg>`; portHtml = `<div class="port input-port" data-node="${nodeId}" data-port-type="in" data-port-idx="0"></div><div class="port output-port" data-node="${nodeId}" data-port-type="out" data-port-idx="0"></div>`;
+            } else {
+                if(type === 'AND') gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 25 5 A 10 10 0 0 1 25 25 L 10 25 Z" /></svg>`; if(type === 'OR') gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /></svg>`; if(type === 'NAND') gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 L 25 5 A 10 10 0 0 1 25 25 L 10 25 Z" /><circle cx="38" cy="15" r="3" /></svg>`; if(type === 'NOR') gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /><circle cx="39" cy="15" r="3" /></svg>`; if(type === 'XOR') gateSvg = `<svg class="gate-icon-svg" viewBox="0 0 50 30"><path d="M 5 5 Q 13 15 5 25 M 10 5 Q 18 15 10 25 Q 25 25 35 15 Q 25 5 10 5 Z" /></svg>`;
+                portHtml = `<div class="port input-port-1" data-node="${nodeId}" data-port-type="in" data-port-idx="0"></div><div class="port input-port-2" data-node="${nodeId}" data-port-type="in" data-port-idx="1"></div><div class="port output-port" data-node="${nodeId}" data-port-type="out" data-port-idx="0"></div>`;
+            }
+            const gateNodeElement = document.createElement('div'); gateNodeElement.className = 'canvas-node'; gateNodeElement.id = nodeId; gateNodeElement.style.left = `${x}px`; gateNodeElement.style.top = `${y}px`; gateNodeElement.innerHTML = `<div class="node-delete-btn" onclick="deleteIndividualNode('${nodeId}')" title="Remove Component">×</div>${gateSvg}<div class="node-title">${type}</div>${portHtml}`;
+            document.getElementById("canvas-board").appendChild(gateNodeElement); nodes.push({ id: nodeId, type: type, x: x, y: y, fixed: false }); makeElementDraggable(gateNodeElement); setupPortListeners();
+        }
+
+        function deleteIndividualNode(nodeId) { const el = document.getElementById(nodeId); if(el) el.remove(); nodes = nodes.filter(n => n.id !== nodeId); connections = connections.filter(c => c.fromNode !== nodeId && c.toNode !== nodeId); redrawWires(); }
+
+        // Touch & Mouse Support Added Here
+        function makeElementDraggable(elm) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0; 
+            elm.onmousedown = dragMouseDown;
+            elm.ontouchstart = dragMouseDown;
+
+            function dragMouseDown(e) { 
+                if(e.target.classList.contains('port') || e.target.classList.contains('node-delete-btn')) return; 
+                
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                if(e.type === 'touchstart') {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    e.preventDefault(); 
+                }
+                
+                pos3 = clientX; 
+                pos4 = clientY; 
+                
+                document.onmouseup = closeDragElement; 
+                document.onmousemove = elementDrag; 
+                document.ontouchend = closeDragElement;
+                document.ontouchmove = elementDrag;
+                
+                document.querySelectorAll('.canvas-node').forEach(n => n.classList.remove('selected')); 
+                elm.classList.add('selected'); 
+            }
+            
+            function elementDrag(e) { 
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                
+                if(e.type === 'touchmove') {
+                    e.preventDefault(); // Prevent scrolling while dragging gate
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    e.preventDefault();
+                }
+                
+                pos1 = pos3 - clientX; 
+                pos2 = pos4 - clientY; 
+                pos3 = clientX; 
+                pos4 = clientY; 
+                
+                elm.style.top = `${elm.offsetTop - pos2}px`; 
+                elm.style.left = `${elm.offsetLeft - pos1}px`; 
+                let nodeObj = nodes.find(n => n.id === elm.id); 
+                if(nodeObj) { nodeObj.x = elm.offsetLeft - pos1; nodeObj.y = elm.offsetTop - pos2; } 
+                redrawWires(); 
+            }
+            function closeDragElement() { 
+                document.onmouseup = null; 
+                document.onmousemove = null; 
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        function setupPortListeners() { document.querySelectorAll('.port').forEach(portEl => { portEl.onclick = function(e) { e.stopPropagation(); handlePortSelection(this); }; }); }
+
+        function handlePortSelection(portEl) {
+            const nodeId = portEl.getAttribute('data-node'), portType = portEl.getAttribute('data-port-type'), portIdx = parseInt(portEl.getAttribute('data-port-idx'));
+            if (!selectedPort) { if (portType !== 'out') return alert("Wiring must start from an Output pin."); selectedPort = { nodeId, portType, portIdx, element: portEl }; portEl.classList.add('selected-port'); } 
+            else {
+                if (selectedPort.nodeId === nodeId) { selectedPort.element.classList.remove('selected-port'); selectedPort = null; return; }
+                if (portType !== 'in') { alert("Wiring must end on an Input pin."); selectedPort.element.classList.remove('selected-port'); selectedPort = null; return; }
+                if(connections.some(c => c.toNode === nodeId && c.toPortIdx === portIdx)) { alert("This input pin is already occupied."); selectedPort.element.classList.remove('selected-port'); selectedPort = null; return; }
+                connections.push({ fromNode: selectedPort.nodeId, fromPortIdx: selectedPort.fromPortIdx, toNode: nodeId, toPortIdx: portIdx }); selectedPort.element.classList.remove('selected-port'); selectedPort = null; redrawWires();
+            }
+        }
+
+        function redrawWires() {
+            const svgContainer = document.getElementById("svg-layer"); svgContainer.innerHTML = ""; const canvasRect = document.getElementById("canvas-board").getBoundingClientRect();
+            connections.forEach(conn => {
+                const fromEl = document.querySelector(`[data-node="${conn.fromNode}"][data-port-type="out"]`); const toEl = document.querySelector(`[data-node="${conn.toNode}"][data-port-type="in"][data-port-idx="${conn.toPortIdx}"]`);
+                if(fromEl && toEl) { const rFrom = fromEl.getBoundingClientRect(); const rTo = toEl.getBoundingClientRect(); const x1 = rFrom.left - canvasRect.left + 10; const y1 = rFrom.top - canvasRect.top + 10; const x2 = rTo.left - canvasRect.left + 10; const y2 = rTo.top - canvasRect.top + 10; const controlOffset = Math.max(Math.abs(x2 - x1) * 0.5, 30); const pathD = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`; const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path"); pathElement.setAttribute("d", pathD); pathElement.setAttribute("stroke", "#60a5fa"); pathElement.setAttribute("stroke-width", "3"); pathElement.setAttribute("fill", "none"); pathElement.setAttribute("stroke-linecap", "round"); svgContainer.appendChild(pathElement); }
+            });
+        }
+
+        function clearAllConnections() { connections = []; redrawWires(); }
+        function clearFullCanvas() { connections = []; nodes = []; selectedPort = null; document.querySelectorAll('.canvas-node').forEach(el => el.remove()); redrawWires(); if(questionsData[currentQuestionIdx]) initializeFixedNodes(questionsData[currentQuestionIdx]); }
+
+        function getTruthTableCombinations(numInputs) { const table = []; for (let i = 0; i < (1 << numInputs); i++) { let row = []; for (let j = numInputs - 1; j >= 0; j--) { row.push((i >> j) & 1); } table.push(row); } return table; }
+
+        function evaluateCurrentCircuit() {
+            const activeQuestion = questionsData[currentQuestionIdx]; let logicIsCorrect = true; const testCombinations = getTruthTableCombinations(activeQuestion.inputs.length);
+            try {
+                for(let comb of testCombinations) {
+                    const expected = activeQuestion.expectedLogic(comb); const actual = computeCircuitStateForInputs(comb, activeQuestion.inputs.length, activeQuestion.outputs.length);
+                    for(let k = 0; k < expected.length; k++) { let expVal = expected[k] === true ? 1 : (expected[k] === false ? 0 : expected[k]); if(actual[k] !== expVal) { logicIsCorrect = false; break; } }
+                    if(!logicIsCorrect) break;
+                }
+            } catch (e) { logicIsCorrect = false; } return logicIsCorrect;
+        }
+
+        function computeCircuitStateForInputs(inputVals, numInputs, numOutputs) {
+            let nodeValues = {}; for(let i=0; i<numInputs; i++) nodeValues[`input_${i}`] = inputVals[i];
+            let unresolvedGates = nodes.filter(n => n.type !== 'INPUT' && n.type !== 'OUTPUT'); let evaluationAttempts = 0; const maxLimit = 150; 
+            while(unresolvedGates.length > 0 && evaluationAttempts < maxLimit) {
+                evaluationAttempts++; let progressMade = false;
+                for(let i = 0; i < unresolvedGates.length; i++) {
+                    const gate = unresolvedGates[i]; const incomingWires = connections.filter(c => c.toNode === gate.id);
+                    if (gate.type === 'NOT') { const link = incomingWires.find(c => c.toPortIdx === 0); if(link && nodeValues[link.fromNode] !== undefined) { nodeValues[gate.id] = nodeValues[link.fromNode] === 1 ? 0 : 1; unresolvedGates.splice(i, 1); progressMade = true; break; } } 
+                    else {
+                        const link1 = incomingWires.find(c => c.toPortIdx === 0); const link2 = incomingWires.find(c => c.toPortIdx === 1);
+                        if(link1 && link2 && nodeValues[link1.fromNode] !== undefined && nodeValues[link2.fromNode] !== undefined) {
+                            const val1 = nodeValues[link1.fromNode], val2 = nodeValues[link2.fromNode]; let outVal = 0;
+                            if(gate.type === 'AND') outVal = val1 && val2; if(gate.type === 'OR') outVal = val1 || val2; if(gate.type === 'NAND') outVal = !(val1 && val2) ? 1 : 0; if(gate.type === 'NOR') outVal = !(val1 || val2) ? 1 : 0; if(gate.type === 'XOR') outVal = val1 ^ val2;
+                            nodeValues[gate.id] = outVal ? 1 : 0; unresolvedGates.splice(i, 1); progressMade = true; break;
+                        }
+                    }
+                }
+                if(!progressMade) break; 
+            }
+            let results = [];
+            for(let j = 0; j < numOutputs; j++) { const finalLink = connections.find(c => c.toNode === `output_${j}`); results.push(finalLink && nodeValues[finalLink.fromNode] !== undefined ? nodeValues[finalLink.fromNode] : -1); }
+            return results; 
+        }
+
+        let savedResultsLogs = [];
+        
+        function processSubmission() { 
+            const isCorrect = evaluateCurrentCircuit(); 
+            if (!isCorrect) { 
+                document.getElementById("confirm-modal").style.display = "flex"; 
+            } else { 
+                saveCurrentStateLog("CORRECT_LOGIC"); 
+                handlePostQuestionLogic(); 
+            } 
+        }
+        
+        function closeModal() { document.getElementById("confirm-modal").style.display = "none"; }
+        
+        function executeModalDecision() { 
+            const chosenOption = document.getElementById("modal-confirm-dropdown").value; 
+            closeModal(); 
+            if (chosenOption === "yes") { 
+                saveCurrentStateLog("INCORRECT_OR_SKIPPED"); 
+                handlePostQuestionLogic(); 
+            } 
+        }
+        
+        function saveCurrentStateLog(outcomeStatus) { 
+            savedResultsLogs.push({ questionId: questionsData[currentQuestionIdx].id, scenarioTitle: questionsData[currentQuestionIdx].title, studentMarkAssessmentResult: outcomeStatus, savedActiveNodesLayout: JSON.stringify(nodes), savedActiveConnectionsLayout: JSON.stringify(connections), remainingTimeAtSubmission: document.getElementById("countdown-timer").innerText }); 
+        }
+        
+        function showFinalCompletionScreen() { 
+            clearInterval(globalTimerInterval); 
+            document.getElementById("app-workspace").style.display = "none"; 
+            document.getElementById("final-screen").style.display = "flex"; 
+        }
+        
+        function downloadAnswersReport() { 
+            const payloadReport = { institutionBranding: "ROOT_ict Logic Assessment Suite", moderator: "Himanka Dodangoda", timestamp: new Date().toISOString(), studentIdentityProfile: { fullName: studentName, indexIdentifier: studentIndex }, assessmentResultsSummary: savedResultsLogs }; 
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payloadReport, null, 4)); 
+            const downloadAnchorNode = document.createElement('a'); 
+            downloadAnchorNode.setAttribute("href", dataStr); 
+            downloadAnchorNode.setAttribute("download", `ROOT_ICT_Logic_Final_Answers_${studentName.replace(/\s+/g, '_')}.json`); 
+            document.body.appendChild(downloadAnchorNode); 
+            downloadAnchorNode.click(); 
+            downloadAnchorNode.remove(); 
+        }
+    </script>
+</body>
+</html>
